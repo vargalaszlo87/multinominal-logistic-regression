@@ -11,35 +11,39 @@
 
 /* multiLogR() */
 
+typedef struct Setup {
+    double learningRate;
+    unsigned int maxInteration;
+    unsigned int sampleSize;
+    unsigned int featureSize;
+} Setup, *pSetup;
+
 typedef struct Data  {
     double **x;
     unsigned int *y;
     double *weight;
-    unsigned int sample;
-    unsigned int feature;
     unsigned int xyCounter;
     unsigned int wCounter;
 } Data, *pData;
 
 typedef struct Result {
-    int sample;
+    int test;
 } Result, *pResult;
 
-bool multiLogRInit(Data *d, Result *r) {
-    if (d->sample < 1 || d->feature < 1)
+bool multiLogRInit(Setup *s, Data *d, Result *r) {
+    if (s->sampleSize < 1 || s->featureSize < 1)
         return false;
-    d->x = (double**)calloc(d->sample, sizeof(double*) + d->feature * sizeof(double));
+    d->x = (double**)calloc(s->sampleSize, sizeof(double*) + s->featureSize * sizeof(double));
     if (!d -> x)
             return false;
-    for (int i = 0 ; i < d->sample ; ++i)
-        *(d->x+i) = (double*)(d->x + d->sample) + i + d->feature;
-    d->y = (int *)calloc(d->sample, sizeof(int));
-    d->weight = (double *)calloc(d->feature, sizeof(double));
+    for (int i = 0 ; i < s->sampleSize ; ++i)
+        *(d->x+i) = (double*)(d->x + s->sampleSize) + i + s->featureSize;
+    d->y = (int *)calloc(s->sampleSize, sizeof(int));
+    d->weight = (double *)calloc(s->featureSize, sizeof(double));
     if (!d -> y || !d -> weight)
         return false;
     d->xyCounter = 0;
     d->wCounter = 0;
-    r->sample = d->sample;
 }
 
 bool multiLogRPush(Data *d, double *x, double y) {
@@ -50,9 +54,9 @@ bool multiLogRPush(Data *d, double *x, double y) {
 }
 
 bool multiLogRPushWeight(Data *d, double w) {
-    if (d->feature == d->wCounter)
-        return false;
-    *(d->weight+d->wCounter) = 0.0;
+    //if (s->featureSize == d->wCounter)
+    //    return false;
+    *(d->weight+d->wCounter) = w;
     d->wCounter++;
 }
 
@@ -76,7 +80,7 @@ bool multiLogRTrain() {
 */
 
 
-void train(double X[NUM_SAMPLES][NUM_FEATURES], int y[NUM_SAMPLES], double weights[NUM_FEATURES], int num_iterations) {
+void multiLogRTrain(double X[NUM_SAMPLES][NUM_FEATURES], int y[NUM_SAMPLES], double weights[NUM_FEATURES], int num_iterations) {
     for (int iter = 0; iter < num_iterations; ++iter) {
         for (int i = 0; i < NUM_SAMPLES; ++i) {
             double prediction = calcSigmoid(calcDotProduct(weights, X[i], NUM_FEATURES));
@@ -99,6 +103,7 @@ int predict(double x[NUM_FEATURES], double weights[NUM_FEATURES]) {
 int main() {
 
     Data data;
+    Setup setup;
     Result result;
 
     // test datas
@@ -112,12 +117,17 @@ int main() {
     int Y[NUM_SAMPLES] = {0, 0, 0, 1, 1, 1}; // Osztálycímkék
     double weights[NUM_FEATURES] = {0.0,0.0,0.0}; // Súlyok inicializálása
 
-    data.sample = NUM_SAMPLES;
-    data.feature = NUM_FEATURES;
+
+
+    setup.maxIteration = 10000;
+    setup.learninRate = 0.01;
+
+    setup.sampleSize = NUM_SAMPLES;
+    setup.featureSize = NUM_FEATURES;
 
 
     // init
-    multiLogRInit(&data, &result);
+    multiLogRInit(&setup, &data, &result);
 
     // push datas
     for (int i = 0; i < NUM_SAMPLES ; i++)
@@ -127,7 +137,7 @@ int main() {
         multiLogRPushWeight(&data, weights[i]);
 
     // Modell tanítása
-    train(X, Y, weights, MAX_ITERATIONS);
+    multiLogRTrain(X, Y, weights, MAX_ITERATIONS);
 
     // Tesztadatok
     double test_data[NUM_FEATURES] = {7.2, 5.0, 1.0};
