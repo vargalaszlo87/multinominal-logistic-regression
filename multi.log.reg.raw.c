@@ -2,6 +2,11 @@
 #include <stdlib.h>
 #include <math.h>
 #include <stdbool.h>
+#include <time.h>
+
+#ifndef M_PI
+#define M_PI 3.1415926535897932384626463383279
+#endif
 
 typedef struct Setup {
     double learningRate;
@@ -15,7 +20,7 @@ typedef struct Data  {
     unsigned int *y;
     double *weight;
     unsigned int sampleCounter;
-    unsigned int wCounter;
+    unsigned int weightCounter;
 } Data, *pData;
 
 typedef struct Result {
@@ -34,6 +39,12 @@ double calcSigmoid(double x) {
     return 1.0 / (1.0 + exp(-x));
 }
 
+double calcBoXMuller() {
+	double i = rand() / (RAND_MAX + 1.0);
+	double j = rand() / (RAND_MAX + 1.0);
+	return sqrt(-2 * log(i)) * cos(2 * M_PI * j);
+}
+
 bool multiLogRInit(Setup *s, Data *d, Result *r) {
     if (s->sampleSize < 1 || s->featureSize < 1)
         return false;
@@ -47,19 +58,30 @@ bool multiLogRInit(Setup *s, Data *d, Result *r) {
     if (!d -> y || !d -> weight)
         return false;
     d->sampleCounter = 0;
-    d->wCounter = 0;
-}
-
-bool multiLogRPush(Data *d, double *x, double y) {
-    d->x[d->sampleCounter] = x;
-    d->y[d->sampleCounter] = y;
-    d->sampleCounter++;
+    d->weightCounter = 0;
     return true;
 }
 
-bool multiLogRPushWeight(Data *d, double w) {
-    *(d->weight+d->wCounter) = w;
-    d->wCounter++;
+bool multiLogRPushData(Setup *s, Data *d, double *x, double y) {
+	if (d->sampleCounter == s->sampleSize)
+		return false;
+    d->x[d->sampleCounter] = x;
+    d->y[d->sampleCounter++] = y;
+    return true;
+}
+
+bool multiLogRPushWeight(Setup *s, Data *d, double w) {
+	if (d->weightCounter == s->featureSize)
+		return false;
+    *(d->weight+d -> weightCounter++) = w;
+    return true;
+}
+
+bool multiLogRAutoWeight(Setup *s, Data *d) {
+	srand(time(NULL));
+	for (int i = 0 ; i < s->featureSize ; i++) {
+		*(d->weight + i) = calcBoXMuller();
+	}
 }
 
 bool multiLogRTrain(Setup *s, Data *d) {
@@ -116,10 +138,12 @@ int main() {
 
     // push (training) datas
     for (int i = 0; i < setup.sampleSize ; i++)
-        multiLogRPush(&data, X[i], Y[i]);
+        multiLogRPushData(&setup, &data, X[i], Y[i]);
 
-    for (int i = 0; i < setup.featureSize ; i++)
-        multiLogRPushWeight(&data, weights[i]);
+    //for (int i = 0; i < setup.featureSize ; i++)
+    //    multiLogRPushWeight(&setup, &data, weights[i]);
+        
+    multiLogRAutoWeight(&setup, &data);
 
     // train
     multiLogRTrain(&setup, &data);
