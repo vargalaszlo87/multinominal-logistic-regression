@@ -84,7 +84,7 @@ void train(double X[NUM_SAMPLES][NUM_FEATURES], int y[NUM_SAMPLES], double weigh
 bool multiLogRTrain(Setup *s, Data *d) {
     for (int iteration = 0 ; iteration < s->maxIteration ; ++iteration)
         for (int i = 0; i < d->sampleCounter; ++i) {
-            double p = calcSigmoid(calcDotProduct(&d->weight, &d->x[i], s->featureSize));
+            double p = calcSigmoid(calcDotProduct(d->weight, d->x[i], s->featureSize));
             for (int j = 0; j < s->featureSize; ++j) {
                 *(d->weight+j) += s->learningRate * (d->y[i] - p) * d->x[i][j];
             }
@@ -98,7 +98,7 @@ int old(double x[NUM_FEATURES], double weights[NUM_FEATURES]) {
 }
 
 int multiLogRPredict(Setup *s, Data *d, double *inputData /*double x[NUM_FEATURES], double weights[NUM_FEATURES]*/) {
-    double p = calcSigmoid(calcDotProduct(&d->weight, &inputData, s->featureSize));
+    double p = calcSigmoid(calcDotProduct(d->weight, inputData, s->featureSize));
     return (p >= 0.5) ? 1 : 0;
 }
 
@@ -142,8 +142,20 @@ int main() {
     train(X, Y, weights, MAX_ITERATIONS);
     multiLogRTrain(&setup, &data);
 
+    printf ("Regi sulyok: \n");
+    for (int i = 0 ; i < sizeof(weights)/sizeof(double) ; i++) {
+        printf ("%lf ", weights[i]);
+    }
+    printf ("\n");
+
+    printf ("Uj sulyok: \n");
+    for (int i = 0 ; i < 3; i++) {
+        printf ("%lf ", data.weight[i]);
+    }
+    printf ("\n");
+
     // check
-    double input_data[NUM_FEATURES] = {3.0, 2.0, 0.0};
+    double input_data[NUM_FEATURES] = {2.2, 4.9, 1.8};
 
     // predection
     int prediction = old(input_data, weights);
