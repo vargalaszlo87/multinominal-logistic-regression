@@ -80,6 +80,7 @@ int multiLogRPredict(Setup *s, Data *d, double *inputData) {
 
 int main() {
 
+	// structure
     Data data;
     Setup setup;
     Result result;
