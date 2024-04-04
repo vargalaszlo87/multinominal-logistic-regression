@@ -101,9 +101,20 @@ int multiLogRegPredict(Setup *s, Data *d, double *inputData) {
 }
 
 bool multiLogRegMakeValidArray(Setup *s, double ratio) {
-	double div = floor(s->sampleSize * ratio);
+	
+	/*
+	** DEV
+	*/
+	
+	int div = floor(s->sampleSize * ratio);
 	if (ratio < 0.01 || ratio > 9.99 || div < 1)
 		return false;
+	srand(time(NULL));
+	for (int i = 0; i < div ;i++) {
+		int valid = rand() % s->sampleSize ;
+		printf ("%d\n",valid);	
+	}
+		
 }
 
 int main() {
@@ -162,6 +173,8 @@ int main() {
     
     // show the result
     printf("The prediction is %d with the (%.1lf %.1lf %.1lf) input numbers.\n", result.result, input_data[0], input_data[1], input_data[2]);
+
+	multiLogRegMakeValidArray(&setup, 0.78);
 
     return 0;
 }
