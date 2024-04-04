@@ -45,7 +45,7 @@ double calcBoXMuller() {
 	return sqrt(-2 * log(i)) * cos(2 * M_PI * j);
 }
 
-bool multiLogRInit(Setup *s, Data *d, Result *r) {
+bool multiLogRegInit(Setup *s, Data *d, Result *r) {
     if (s->sampleSize < 1 || s->featureSize < 1)
         return false;
     d->x = (double**)calloc(s->sampleSize, sizeof(double*) + s->featureSize * sizeof(double));
@@ -62,7 +62,7 @@ bool multiLogRInit(Setup *s, Data *d, Result *r) {
     return true;
 }
 
-bool multiLogRPushData(Setup *s, Data *d, double *x, double y) {
+bool multiLogRegPushData(Setup *s, Data *d, double *x, double y) {
 	if (d->sampleCounter == s->sampleSize)
 		return false;
     d->x[d->sampleCounter] = x;
@@ -70,21 +70,21 @@ bool multiLogRPushData(Setup *s, Data *d, double *x, double y) {
     return true;
 }
 
-bool multiLogRPushWeight(Setup *s, Data *d, double w) {
+bool multiLogRegPushWeight(Setup *s, Data *d, double w) {
 	if (d->weightCounter == s->featureSize)
 		return false;
     *(d->weight+d -> weightCounter++) = w;
     return true;
 }
 
-bool multiLogRAutoWeight(Setup *s, Data *d) {
+bool multiLogRegAutoWeight(Setup *s, Data *d) {
 	srand(time(NULL));
 	for (int i = 0 ; i < s->featureSize ; i++) {
 		*(d->weight + i) = calcBoXMuller();
 	}
 }
 
-bool multiLogRTrain(Setup *s, Data *d) {
+bool multiLogRegTrain(Setup *s, Data *d) {
     for (int iteration = 0 ; iteration < s->maxIteration ; ++iteration)
         for (int i = 0; i < d->sampleCounter; ++i) {
             double p = calcSigmoid(calcDotProduct(d->weight, d->x[i], s->featureSize));
@@ -95,9 +95,15 @@ bool multiLogRTrain(Setup *s, Data *d) {
     return true;
 }
 
-int multiLogRPredict(Setup *s, Data *d, double *inputData) {
+int multiLogRegPredict(Setup *s, Data *d, double *inputData) {
     double p = calcSigmoid(calcDotProduct(d->weight, inputData, s->featureSize));
     return (p >= 0.5) ? 1 : 0;
+}
+
+bool multiLogRegMakeValidArray(Setup *s, double ratio) {
+	double div = floor(s->sampleSize * ratio);
+	if (ratio < 0.01 || ratio > 9.99 || div < 1)
+		return false;
 }
 
 int main() {
@@ -134,25 +140,25 @@ int main() {
     setup.featureSize = FEATURES;
 
     // init
-    multiLogRInit(&setup, &data, &result);
+    multiLogRegInit(&setup, &data, &result);
 
     // push (training) datas
     for (int i = 0; i < setup.sampleSize ; i++)
-        multiLogRPushData(&setup, &data, X[i], Y[i]);
+        multiLogRegPushData(&setup, &data, X[i], Y[i]);
 
     //for (int i = 0; i < setup.featureSize ; i++)
     //    multiLogRPushWeight(&setup, &data, weights[i]);
         
-    multiLogRAutoWeight(&setup, &data);
+    multiLogRegAutoWeight(&setup, &data);
 
     // train
-    multiLogRTrain(&setup, &data);
+    multiLogRegTrain(&setup, &data);
 
     // check
     double input_data[FEATURES] = {2.2, 4.9, 1.8};
 
     // predection
-    result.result = multiLogRPredict(&setup, &data, input_data);
+    result.result = multiLogRegPredict(&setup, &data, input_data);
     
     // show the result
     printf("The prediction is %d with the (%.1lf %.1lf %.1lf) input numbers.\n", result.result, input_data[0], input_data[1], input_data[2]);
