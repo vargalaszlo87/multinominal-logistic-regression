@@ -15,7 +15,7 @@ typedef struct Setup {
     unsigned int featureSize; 
 } Setup, *pSetup;
 
-struct Stack {
+typedef struct Stack {
 		int *array;
 		int size;
 		int pointer;
@@ -27,7 +27,7 @@ typedef struct Data  {
     double *weight;
     unsigned int sampleCounter;
     unsigned int weightCounter;
-    struct Stack validation;
+    Stack validationIndex;
 } Data, *pData;
 
 typedef struct Result {
@@ -36,16 +36,16 @@ typedef struct Result {
 
 // stack
 
-void push(struct Stack* s, int item) {
+void push(Stack* s, int item) {
 	if (s->pointer < s->size-1) 
 		s->array[++s->pointer] = item;
 }
 
-int pop(struct Stack* s) {
+int pop(Stack* s) {
 	return (double)((s->pointer == -1 ) ? -1 : s->array[s->pointer--]);
 }
 
-bool search(struct Stack* s, int item) {
+bool search(Stack* s, int item) {
 	for (int i = 0; i < s->pointer + 2; i++)
 		if (s->array[i] == item)
 			return true;
@@ -72,7 +72,7 @@ double calcBoXMuller() {
 	return sqrt(-2 * log(i)) * cos(2 * M_PI * j);
 }
 
-// multinominal-logistic-regression
+// interface
 
 bool multiLogRegInit(Setup *s, Data *d, Result *r) {
     if (s->sampleSize < 1 || s->featureSize < 1)
@@ -139,18 +139,18 @@ bool multiLogRegMakeValidArray(Setup *s, Data * d, double ratio) {
 	if (ratio < 0.01 || ratio > 9.99 || div < 1)
 		return false;
 	// stack
-	d->validation.array = (int*)calloc(div, sizeof(int));
-	d->validation.pointer = -1;
-	d->validation.size = div;
-		
+	d->validationIndex.array = (int*)calloc(div, sizeof(int));
+	d->validationIndex.pointer = -1;
+	d->validationIndex.size = div;
+	// core	
 	srand(time(NULL));
 	for (int i = 0; i < div ;i++) {
 		int temp = rand() % (s->sampleSize - 1 );
-		if (search(&d->validation, temp)) {
+		if (search(&d->validationIndex, temp)) {
 			i--;
 			continue;
 		}
-		push(&d->validation, temp);		
+		push(&d->validationIndex, temp);		
 	}
 }
 
@@ -211,13 +211,7 @@ int main() {
     // show the result
     printf("The prediction is %d with the (%.1lf %.1lf %.1lf) input numbers.\n", result.result, input_data[0], input_data[1], input_data[2]);
 
-	multiLogRegMakeValidArray(&setup, &data, 0.78);
+	multiLogRegMakeValidArray(&setup, &data, 0.48);
 	
-	printf ("\n");
-	printf ("\n%d\n",pop(&data.validation));
-	printf ("\n%d\n",pop(&data.validation));
-	printf ("\n%d\n",pop(&data.validation));
-	printf ("\n%d\n",pop(&data.validation));
-
     return 0;
 }
