@@ -8,11 +8,18 @@
 #define M_PI 3.1415926535897932384626463383279
 #endif
 
+typedef struct Stack {
+	int *array;
+	int size;
+	int pointer;
+} Stack, *pStack;
+
 typedef struct Setup {
     double learningRate;
     unsigned int maxIteration;
     unsigned int sampleSize;
     unsigned int featureSize;
+    unsigned int validationSize;  
 } Setup, *pSetup;
 
 typedef struct Data  {
@@ -21,11 +28,32 @@ typedef struct Data  {
     double *weight;
     unsigned int sampleCounter;
     unsigned int weightCounter;
+    struct Stack validation;
 } Data, *pData;
 
 typedef struct Result {
     int result;
 } Result, *pResult;
+
+// stack
+
+struct Stack* create(int size) {
+	struct Stack* s = (struct Stack*)malloc(sizeof(struct Stack));
+	s->size = size;
+	s->pointer = -1;
+	s->array = (int*)calloc(s->size, sizeof(int));
+}
+
+void push(struct Stack* s, int item) {
+	if (s->pointer < s->size-1) 
+		s->array[++s->pointer] = item;
+}
+
+int pop(struct Stack* s) {
+	return (double)((s->pointer == -1 ) ? -1 : s->array[s->pointer--]);
+}
+
+// calc
 
 double calcDotProduct(double *n1, double *n2, unsigned int size) {
     double r = 0.0;
@@ -45,6 +73,8 @@ double calcBoXMuller() {
 	return sqrt(-2 * log(i)) * cos(2 * M_PI * j);
 }
 
+//bool searchInarray(int *haystack, )
+
 bool multiLogRegInit(Setup *s, Data *d, Result *r) {
     if (s->sampleSize < 1 || s->featureSize < 1)
         return false;
@@ -59,6 +89,7 @@ bool multiLogRegInit(Setup *s, Data *d, Result *r) {
         return false;
     d->sampleCounter = 0;
     d->weightCounter = 0;
+    s->validationSize = 0;
     return true;
 }
 
@@ -100,7 +131,7 @@ int multiLogRegPredict(Setup *s, Data *d, double *inputData) {
     return (p >= 0.5) ? 1 : 0;
 }
 
-bool multiLogRegMakeValidArray(Setup *s, double ratio) {
+bool multiLogRegMakeValidArray(Setup *s, Data * d, double ratio) {
 	
 	/*
 	** DEV
@@ -109,11 +140,26 @@ bool multiLogRegMakeValidArray(Setup *s, double ratio) {
 	int div = floor(s->sampleSize * ratio);
 	if (ratio < 0.01 || ratio > 9.99 || div < 1)
 		return false;
+	s->validationSize = div;
+
+/*	
+	int *validationIndex = (int*)calloc(div, sizeof(int));
+	if (validationIndex == NULL)
+		return false;
+	*/
+		
+//	struct *Stack d->validation = create(32);		
+		
+	
 	srand(time(NULL));
 	for (int i = 0; i < div ;i++) {
-		int valid = rand() % s->sampleSize ;
-		printf ("%d\n",valid);	
+		int valid = rand() % (s->sampleSize - 1 ) ;
+		printf ("%d\n",valid);
+		push(d->validation, valid);	
+		
 	}
+	
+//	d->validation->size = 23;
 		
 }
 
@@ -174,7 +220,10 @@ int main() {
     // show the result
     printf("The prediction is %d with the (%.1lf %.1lf %.1lf) input numbers.\n", result.result, input_data[0], input_data[1], input_data[2]);
 
-	multiLogRegMakeValidArray(&setup, 0.78);
+	multiLogRegMakeValidArray(&setup, &data, 0.78);
+	
+	printf ("\n");
+	//printf ("%d", pop(s));
 
     return 0;
 }
