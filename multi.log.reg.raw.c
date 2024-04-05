@@ -8,19 +8,25 @@
 #define M_PI 3.1415926535897932384626463383279
 #endif
 
-typedef struct Stack {
+/*typedef struct Stack {
 	int *array;
 	int size;
 	int pointer;
 } Stack, *pStack;
+*/
 
 typedef struct Setup {
     double learningRate;
     unsigned int maxIteration;
     unsigned int sampleSize;
-    unsigned int featureSize;
-    unsigned int validationSize;  
+    unsigned int featureSize; 
 } Setup, *pSetup;
+
+struct Stack {
+		int *array;
+		int size;
+		int pointer;
+} Stack;
 
 typedef struct Data  {
     double **x;
@@ -37,13 +43,6 @@ typedef struct Result {
 
 // stack
 
-struct Stack* create(int size) {
-	struct Stack* s = (struct Stack*)malloc(sizeof(struct Stack));
-	s->size = size;
-	s->pointer = -1;
-	s->array = (int*)calloc(s->size, sizeof(int));
-}
-
 void push(struct Stack* s, int item) {
 	if (s->pointer < s->size-1) 
 		s->array[++s->pointer] = item;
@@ -51,6 +50,13 @@ void push(struct Stack* s, int item) {
 
 int pop(struct Stack* s) {
 	return (double)((s->pointer == -1 ) ? -1 : s->array[s->pointer--]);
+}
+
+bool search(struct Stack* s, int item) {
+	for (int i = 0; i < s->pointer + 2; i++)
+		if (s->array[i] == item)
+			return true;
+	return false;
 }
 
 // calc
@@ -73,7 +79,7 @@ double calcBoXMuller() {
 	return sqrt(-2 * log(i)) * cos(2 * M_PI * j);
 }
 
-//bool searchInarray(int *haystack, )
+// multinominal-logistic-regression
 
 bool multiLogRegInit(Setup *s, Data *d, Result *r) {
     if (s->sampleSize < 1 || s->featureSize < 1)
@@ -89,7 +95,6 @@ bool multiLogRegInit(Setup *s, Data *d, Result *r) {
         return false;
     d->sampleCounter = 0;
     d->weightCounter = 0;
-    s->validationSize = 0;
     return true;
 }
 
@@ -140,27 +145,20 @@ bool multiLogRegMakeValidArray(Setup *s, Data * d, double ratio) {
 	int div = floor(s->sampleSize * ratio);
 	if (ratio < 0.01 || ratio > 9.99 || div < 1)
 		return false;
-	s->validationSize = div;
-
-/*	
-	int *validationIndex = (int*)calloc(div, sizeof(int));
-	if (validationIndex == NULL)
-		return false;
-	*/
+	// stack
+	d->validation.array = (int*)calloc(div, sizeof(int));
+	d->validation.pointer = -1;
+	d->validation.size = div;
 		
-//	struct *Stack d->validation = create(32);		
-		
-	
 	srand(time(NULL));
 	for (int i = 0; i < div ;i++) {
-		int valid = rand() % (s->sampleSize - 1 ) ;
-		printf ("%d\n",valid);
-		push(d->validation, valid);	
-		
+		int temp = rand() % (s->sampleSize - 1 );
+		if (search(&d->validation, temp)) {
+			i--;
+			continue;
+		}
+		push(&d->validation, temp);		
 	}
-	
-//	d->validation->size = 23;
-		
 }
 
 int main() {
@@ -223,7 +221,10 @@ int main() {
 	multiLogRegMakeValidArray(&setup, &data, 0.78);
 	
 	printf ("\n");
-	//printf ("%d", pop(s));
+	printf ("\n%d\n",pop(&data.validation));
+	printf ("\n%d\n",pop(&data.validation));
+	printf ("\n%d\n",pop(&data.validation));
+	printf ("\n%d\n",pop(&data.validation));
 
     return 0;
 }
