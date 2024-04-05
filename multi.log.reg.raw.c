@@ -8,13 +8,6 @@
 #define M_PI 3.1415926535897932384626463383279
 #endif
 
-/*typedef struct Stack {
-	int *array;
-	int size;
-	int pointer;
-} Stack, *pStack;
-*/
-
 typedef struct Setup {
     double learningRate;
     unsigned int maxIteration;
