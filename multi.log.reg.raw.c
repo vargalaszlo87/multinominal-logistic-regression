@@ -21,9 +21,14 @@ typedef struct Stack {
 		int pointer;
 } Stack;
 
-typedef struct Data  {
+typedef struct XY {
     double **x;
-    unsigned int *y;
+    unsigned int *y;		
+} XY;
+
+typedef struct Data  {
+	XY training;
+ 	XY validation;
     double *weight;
     unsigned int sampleCounter;
     unsigned int weightCounter;
@@ -78,14 +83,14 @@ double calcBoXMuller() {
 bool multiLogRegInit(Data *d, Result *r) {
     if (d->setup.sampleSize < 1 || d->setup.featureSize < 1)
         return false;
-    d->x = (double**)calloc(d->setup.sampleSize, sizeof(double*) + d->setup.featureSize * sizeof(double));
-    if (!d -> x)
+    d->training.x = (double**)calloc(d->setup.sampleSize, sizeof(double*) + d->setup.featureSize * sizeof(double));
+    if (!d -> training.x)
             return false;
     for (int i = 0 ; i < d->setup.sampleSize ; ++i)
-        *(d->x+i) = (double*)(d->x + d->setup.sampleSize) + i + d->setup.featureSize;
-    d->y = (int *)calloc(d->setup.sampleSize, sizeof(int));
+        *(d->training.x+i) = (double*)(d->training.x + d->setup.sampleSize) + i + d->setup.featureSize;
+    d->training.y = (int *)calloc(d->setup.sampleSize, sizeof(int));
     d->weight = (double *)calloc(d->setup.featureSize, sizeof(double));
-    if (!d -> y || !d -> weight)
+    if (!d -> training.y || !d -> weight)
         return false;
     d->sampleCounter = 0;
     d->weightCounter = 0;
@@ -95,8 +100,8 @@ bool multiLogRegInit(Data *d, Result *r) {
 bool multiLogRegPushData(Data *d, double *x, double y) {
 	if (d->sampleCounter == d->setup.sampleSize)
 		return false;
-    d->x[d->sampleCounter] = x;
-    d->y[d->sampleCounter++] = y;
+    d->training.x[d->sampleCounter] = x;
+    d->training.y[d->sampleCounter++] = y;
     return true;
 }
 
@@ -117,9 +122,9 @@ bool multiLogRegAutoWeight(Data *d) {
 bool multiLogRegTrain(Data *d) {
     for (int iteration = 0 ; iteration < d->setup.maxIteration ; ++iteration)
         for (int i = 0; i < d->sampleCounter; ++i) {
-            double p = calcSigmoid(calcDotProduct(d->weight, d->x[i], d->setup.featureSize));
+            double p = calcSigmoid(calcDotProduct(d->weight, d->training.x[i], d->setup.featureSize));
             for (int j = 0; j < d->setup.featureSize; ++j) {
-                *(d->weight+j) += d->setup.learningRate * (d->y[i] - p) * d->x[i][j];
+                *(d->weight+j) += d->setup.learningRate * (d->training.y[i] - p) * d->training.x[i][j];
             }
         }
     return true;
@@ -153,6 +158,9 @@ bool multiLogRegMakeValidArray(Data * d, double ratio) {
 		}
 		push(&d->validationIndex, temp);		
 	}
+	
+	
+	
 }
 
 int main() {
