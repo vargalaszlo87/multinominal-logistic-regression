@@ -28,6 +28,7 @@ typedef struct Data  {
     unsigned int sampleCounter;
     unsigned int weightCounter;
     Stack validationIndex;
+    Setup setup;
 } Data, *pData;
 
 typedef struct Result {
@@ -74,16 +75,16 @@ double calcBoXMuller() {
 
 // interface
 
-bool multiLogRegInit(Setup *s, Data *d, Result *r) {
-    if (s->sampleSize < 1 || s->featureSize < 1)
+bool multiLogRegInit(Data *d, Result *r) {
+    if (d->setup.sampleSize < 1 || d->setup.featureSize < 1)
         return false;
-    d->x = (double**)calloc(s->sampleSize, sizeof(double*) + s->featureSize * sizeof(double));
+    d->x = (double**)calloc(d->setup.sampleSize, sizeof(double*) + d->setup.featureSize * sizeof(double));
     if (!d -> x)
             return false;
-    for (int i = 0 ; i < s->sampleSize ; ++i)
-        *(d->x+i) = (double*)(d->x + s->sampleSize) + i + s->featureSize;
-    d->y = (int *)calloc(s->sampleSize, sizeof(int));
-    d->weight = (double *)calloc(s->featureSize, sizeof(double));
+    for (int i = 0 ; i < d->setup.sampleSize ; ++i)
+        *(d->x+i) = (double*)(d->x + d->setup.sampleSize) + i + d->setup.featureSize;
+    d->y = (int *)calloc(d->setup.sampleSize, sizeof(int));
+    d->weight = (double *)calloc(d->setup.featureSize, sizeof(double));
     if (!d -> y || !d -> weight)
         return false;
     d->sampleCounter = 0;
@@ -91,51 +92,51 @@ bool multiLogRegInit(Setup *s, Data *d, Result *r) {
     return true;
 }
 
-bool multiLogRegPushData(Setup *s, Data *d, double *x, double y) {
-	if (d->sampleCounter == s->sampleSize)
+bool multiLogRegPushData(Data *d, double *x, double y) {
+	if (d->sampleCounter == d->setup.sampleSize)
 		return false;
     d->x[d->sampleCounter] = x;
     d->y[d->sampleCounter++] = y;
     return true;
 }
 
-bool multiLogRegPushWeight(Setup *s, Data *d, double w) {
-	if (d->weightCounter == s->featureSize)
+bool multiLogRegPushWeight(Data *d, double w) {
+	if (d->weightCounter == d->setup.featureSize)
 		return false;
     *(d->weight+d -> weightCounter++) = w;
     return true;
 }
 
-bool multiLogRegAutoWeight(Setup *s, Data *d) {
+bool multiLogRegAutoWeight(Data *d) {
 	srand(time(NULL));
-	for (int i = 0 ; i < s->featureSize ; i++) {
+	for (int i = 0 ; i < d->setup.featureSize ; i++) {
 		*(d->weight + i) = calcBoXMuller();
 	}
 }
 
-bool multiLogRegTrain(Setup *s, Data *d) {
-    for (int iteration = 0 ; iteration < s->maxIteration ; ++iteration)
+bool multiLogRegTrain(Data *d) {
+    for (int iteration = 0 ; iteration < d->setup.maxIteration ; ++iteration)
         for (int i = 0; i < d->sampleCounter; ++i) {
-            double p = calcSigmoid(calcDotProduct(d->weight, d->x[i], s->featureSize));
-            for (int j = 0; j < s->featureSize; ++j) {
-                *(d->weight+j) += s->learningRate * (d->y[i] - p) * d->x[i][j];
+            double p = calcSigmoid(calcDotProduct(d->weight, d->x[i], d->setup.featureSize));
+            for (int j = 0; j < d->setup.featureSize; ++j) {
+                *(d->weight+j) += d->setup.learningRate * (d->y[i] - p) * d->x[i][j];
             }
         }
     return true;
 }
 
-int multiLogRegPredict(Setup *s, Data *d, double *inputData) {
-    double p = calcSigmoid(calcDotProduct(d->weight, inputData, s->featureSize));
+int multiLogRegPredict(Data *d, double *inputData) {
+    double p = calcSigmoid(calcDotProduct(d->weight, inputData, d->setup.featureSize));
     return (p >= 0.5) ? 1 : 0;
 }
 
-bool multiLogRegMakeValidArray(Setup *s, Data * d, double ratio) {
+bool multiLogRegMakeValidArray(Data * d, double ratio) {
 	
 	/*
 	** DEV
 	*/
 	
-	int div = floor(s->sampleSize * ratio);
+	int div = floor(d->setup.sampleSize * ratio);
 	if (ratio < 0.01 || ratio > 9.99 || div < 1)
 		return false;
 	// stack
@@ -145,7 +146,7 @@ bool multiLogRegMakeValidArray(Setup *s, Data * d, double ratio) {
 	// core	
 	srand(time(NULL));
 	for (int i = 0; i < div ;i++) {
-		int temp = rand() % (s->sampleSize - 1 );
+		int temp = rand() % (d->setup.sampleSize - 1 );
 		if (search(&d->validationIndex, temp)) {
 			i--;
 			continue;
@@ -158,7 +159,7 @@ int main() {
 
 	// structure
     Data data;
-    Setup setup;
+    //Setup setup;
     Result result;
 
     // test datas  
@@ -181,37 +182,37 @@ int main() {
 		{0.0,0.0,0.0}; 
 
 	// setup
-    setup.maxIteration = 10000;
-    setup.learningRate = 0.01;
+    data.setup.maxIteration = 10000;
+    data.setup.learningRate = 0.01;
 
-    setup.sampleSize = SAMPLES;
-    setup.featureSize = FEATURES;
+    data.setup.sampleSize = SAMPLES;
+    data.setup.featureSize = FEATURES;
 
     // init
-    multiLogRegInit(&setup, &data, &result);
+    multiLogRegInit(&data, &result);
 
     // push (training) datas
-    for (int i = 0; i < setup.sampleSize ; i++)
-        multiLogRegPushData(&setup, &data, X[i], Y[i]);
+    for (int i = 0; i < data.setup.sampleSize ; i++)
+        multiLogRegPushData(&data, X[i], Y[i]);
 
     //for (int i = 0; i < setup.featureSize ; i++)
-    //    multiLogRPushWeight(&setup, &data, weights[i]);
+    //    multiLogRPushWeight(&data, weights[i]);
         
-    multiLogRegAutoWeight(&setup, &data);
+    multiLogRegAutoWeight(&data);
 
     // train
-    multiLogRegTrain(&setup, &data);
+    multiLogRegTrain(&data);
 
     // check
     double input_data[FEATURES] = {2.2, 4.9, 1.8};
 
     // predection
-    result.result = multiLogRegPredict(&setup, &data, input_data);
+    result.result = multiLogRegPredict(&data, input_data);
     
     // show the result
     printf("The prediction is %d with the (%.1lf %.1lf %.1lf) input numbers.\n", result.result, input_data[0], input_data[1], input_data[2]);
 
-	multiLogRegMakeValidArray(&setup, &data, 0.48);
+	multiLogRegMakeValidArray(&data, 0.48);
 	
     return 0;
 }
