@@ -13,7 +13,7 @@ typedef struct Setup {
     unsigned int maxIteration;
     unsigned int sampleSize;
     unsigned int featureSize; 
-} Setup, *pSetup;
+} Setup;
 
 typedef struct Stack {
 		int *array;
