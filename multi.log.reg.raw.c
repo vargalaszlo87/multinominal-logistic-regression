@@ -240,6 +240,7 @@ int main() {
 
 /*
 
+Accuracy:
 Minden minta előrejelzett osztályát meg kell határozni a tanítás után.
 Össze kell hasonlítani az előrejelzett osztályokat a valós osztályokkal.
 Kiszámítjuk a helyesen osztályozott minták számát.
