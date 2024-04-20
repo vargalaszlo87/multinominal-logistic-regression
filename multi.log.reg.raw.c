@@ -12,7 +12,11 @@ typedef struct Setup {
     double learningRate;
     unsigned int maxIteration;
     unsigned int sampleSize;
-    unsigned int featureSize; 
+    unsigned int featureSize;
+    enum {
+        LOG_LOSS,
+        BINARY_CROSS_ENTROPY
+    } logLoss;
 } Setup;
 
 typedef struct Stack {
@@ -24,12 +28,12 @@ typedef struct Stack {
 typedef struct XY {
     double **x;
     unsigned int *y;
-	unsigned int counter;		
+	unsigned int counter;
 } XY;
 
 typedef struct W {
     double *w;
-    unsigned int counter;	
+    unsigned int counter;
 } W;
 
 typedef struct Data  {
@@ -46,7 +50,7 @@ typedef struct Data  {
 // stack
 
 void push(Stack* s, int item) {
-	if (s->pointer < s->size-1) 
+	if (s->pointer < s->size-1)
 		s->array[++s->pointer] = item;
 }
 
@@ -127,14 +131,20 @@ bool multiLogRegTrain(Data *d) {
     	unsigned int correctPredictions = 0;
     	double totalLoss = 0.0;
         for (int i = 0; i < d->training.counter; ++i) {
-            double p = calcSigmoid(calcDotProduct(d->weight.w, d->training.x[i], d->setup.featureSize));        	
+
+            double p = calcSigmoid(calcDotProduct(d->weight.w, d->training.x[i], d->setup.featureSize));
+            // accuracy
 			int pClass = (p >= 0.5) ? 1 : 0;
             if (pClass == d->training.y[i]) {
                 correctPredictions++;
-            }    
-            double loss = -((d->training.y[i]) * log(p) + (1 - d->training.y[i]) * log(1 - p)); /* log-loss */
-            //double loss = -(d->training.y[i]) * log(p) - (1 - d->training.y[i]) * log(1 - p); 	/* binary cross-entropy */ 
+            }
+            // loss
+            double loss = -((d->training.y[i]) * log(p) + (1 - d->training.y[i]) * log(1 - p)); // log-loss
+            /*
+                double loss = -(d->training.y[i]) * log(p) - (1 - d->training.y[i]) * log(1 - p); 	// binary cross-entropy
+            */
             totalLoss += loss;
+            // train
             for (int j = 0; j < d->setup.featureSize; ++j) {
                 *(d->weight.w+j) += d->setup.learningRate * (d->training.y[i] - p) * d->training.x[i][j];
             }
@@ -151,11 +161,11 @@ int multiLogRegPredict(Data *d, double *inputData) {
 }
 
 bool multiLogRegMakeValidArray(Data * d, double ratio) {
-	
+
 	/*
 	** DEV
 	*/
-	
+
 	int div = floor(d->setup.sampleSize * ratio);
 	if (ratio < 0.01 || ratio > 9.99 || div < 1)
 		return false;
@@ -163,7 +173,7 @@ bool multiLogRegMakeValidArray(Data * d, double ratio) {
 	d->validationIndex.array = (int*)calloc(div, sizeof(int));
 	d->validationIndex.pointer = -1;
 	d->validationIndex.size = div;
-	// core	
+	// core
 	srand(time(NULL));
 	for (int i = 0; i < div ;i++) {
 		int temp = rand() % (d->setup.sampleSize - 1 );
@@ -171,7 +181,7 @@ bool multiLogRegMakeValidArray(Data * d, double ratio) {
 			i--;
 			continue;
 		}
-		push(&d->validationIndex, temp);		
+		push(&d->validationIndex, temp);
 	}
 }
 
@@ -180,11 +190,11 @@ int main() {
 	// structure
     Data data;
 
-    // test datas  
+    // test datas
     #define SAMPLES 6
     #define FEATURES 3
-    
-    double X[SAMPLES][FEATURES] = 
+
+    double X[SAMPLES][FEATURES] =
 		{{2.0, 1.0, 1.0},
          {3.0, 2.0, 0.0},
          {3.0, 4.0, 0.0},
@@ -192,13 +202,13 @@ int main() {
          {7.0, 5.0, 1.0},
          {2.0, 5.0, 1.0}
 		};
-		
-	int Y[SAMPLES] =
-		{0, 0, 0, 1, 1, 1}; 
 
-		
+	int Y[SAMPLES] =
+		{0, 0, 0, 1, 1, 1};
+
+
     double weights[FEATURES] =
-		{0.0,0.0,0.0}; 
+		{0.0,0.0,0.0};
 
 	// setup
     data.setup.maxIteration = 1000;
@@ -216,7 +226,7 @@ int main() {
 
     //for (int i = 0; i < setup.featureSize ; i++)
     //    multiLogRPushWeight(&data, weights[i]);
-        
+
     multiLogRegAutoWeight(&data);
 
     // train
@@ -227,14 +237,14 @@ int main() {
 
     // predection
     data.result = multiLogRegPredict(&data, input_data);
-    
+
     // show the result
     printf("The prediction is %d with the (%.1lf %.1lf %.1lf) input numbers.\n", data.result, input_data[0], input_data[1], input_data[2]);
 
 	multiLogRegMakeValidArray(&data, 0.48);
-	
+
 	printf ("Loss: %lf, Accuracy: %lf", data.loss, data.accuracy);
-	
+
     return 0;
 }
 
