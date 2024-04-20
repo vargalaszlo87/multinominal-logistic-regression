@@ -13,10 +13,19 @@ typedef struct Setup {
     unsigned int maxIteration;
     unsigned int sampleSize;
     unsigned int featureSize;
-    enum {
+    double lambda;
+    // dev
+    enum regularization {
+        L1 = 1, // Lasso
+        L2 = 2  // Ridge
+    };
+    // -
+    unsigned short lossSetup;
+    enum loss {
         LOG_LOSS,
         BINARY_CROSS_ENTROPY
-    } logLoss;
+    };
+
 } Setup;
 
 typedef struct Stack {
@@ -101,6 +110,7 @@ bool multiLogRegInit(Data *d) {
         return false;
     d->training.counter = 0;
     d->weight.counter = 0;
+    d->setup.lossSetup = LOG_LOSS;
     return true;
 }
 
@@ -139,14 +149,23 @@ bool multiLogRegTrain(Data *d) {
                 correctPredictions++;
             }
             // loss
-            double loss = -((d->training.y[i]) * log(p) + (1 - d->training.y[i]) * log(1 - p)); // log-loss
-            /*
-                double loss = -(d->training.y[i]) * log(p) - (1 - d->training.y[i]) * log(1 - p); 	// binary cross-entropy
-            */
+            double loss;
+            switch (d->setup.lossSetup) {
+                case LOG_LOSS:
+                   loss = -((d->training.y[i]) * log(p) + (1 - d->training.y[i]) * log(1 - p));
+                   break;
+                case BINARY_CROSS_ENTROPY:
+                    loss = -(d->training.y[i]) * log(p) - (1 - d->training.y[i]) * log(1 - p);
+                    break;
+                default:
+                    loss = 0;
+                    break;
+            }
             totalLoss += loss;
             // train
             for (int j = 0; j < d->setup.featureSize; ++j) {
-                *(d->weight.w+j) += d->setup.learningRate * (d->training.y[i] - p) * d->training.x[i][j];
+                // DEV: Ridge regularization
+                *(d->weight.w+j) += d->setup.learningRate * ((d->training.y[i] - p) * d->training.x[i][j] - d->setup.lambda * *(d->weight.w+j));
             }
         }
         d->accuracy = (double)correctPredictions / d->training.counter;
@@ -227,7 +246,11 @@ int main() {
     //for (int i = 0; i < setup.featureSize ; i++)
     //    multiLogRPushWeight(&data, weights[i]);
 
+    // random weights
     multiLogRegAutoWeight(&data);
+
+    // reqularization
+    data.setup.lambda = 0.05;
 
     // train
     multiLogRegTrain(&data);
@@ -255,5 +278,17 @@ Minden minta előrejelzett osztályát meg kell határozni a tanítás után.
 Össze kell hasonlítani az előrejelzett osztályokat a valós osztályokkal.
 Kiszámítjuk a helyesen osztályozott minták számát.
 Az accuracy értéke a helyesen osztályozott minták számának és az összes minta számának hányadosa.
+
+
+Ez lesz a Ridge
+double lambda = 0.1; // Regularizációs paraméter (lambda)
+
+// A súlyok frissítése Lasso regularizációval
+if (*(d->weight.w+j) > 0) {
+    *(d->weight.w+j) += d->setup.learningRate * ((d->training.y[i] - p) * d->training.x[i][j] - lambda);
+} else if (*(d->weight.w+j) < 0) {
+    *(d->weight.w+j) += d->setup.learningRate * ((d->training.y[i] - p) * d->training.x[i][j] + lambda);
+}
+
 
 */
