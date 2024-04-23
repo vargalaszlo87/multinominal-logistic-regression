@@ -71,6 +71,7 @@ typedef struct Data  {
     Setup setup;
     double accuracy;
     double loss;
+    int iteration;
     int result;
 } Data, *pData;
 
@@ -121,9 +122,11 @@ double doubleRound(double value, int d) {
 
 // core functions
 
-bool multiLogRegInit(Data *d) {
-    if (d->setup.sampleSize < 1 || d->setup.featureSize < 1)
+bool multiLogRegInit(Data *d, unsigned int samples, unsigned int features) {
+    if (samples < 1 || features < 1)
         return false;
+    d->setup.sampleSize = samples;
+	d->setup.featureSize = features;    
     d->training.x = (double**)calloc(d->setup.sampleSize, sizeof(double*) + d->setup.featureSize * sizeof(double));
     if (!d -> training.x)
             return false;
@@ -135,12 +138,13 @@ bool multiLogRegInit(Data *d) {
         return false;
     d->training.counter = 0;
     d->weight.counter = 0;
-    /*d->setup.lossMethod = LOG_LOSS;
+    // default
+    d->setup.lossMethod = LOG_LOSS;
     d->setup.regularizationMethod = REGULARIZATION_NONE;
     d->setup.lambda = 0.05;
     d->setup.earlyStopMethod = EARLY_NONE;
     d->setup.earlyStopValue = 0.5;
-    d->setup.earlyStopPatience = 10;*/
+    d->setup.earlyStopPatience = 10;
     return true;
 }
 
@@ -167,12 +171,13 @@ bool multiLogRegAutoWeight(Data *d) {
 }
 
 bool multiLogRegTrain(Data *d) {
-    for (int iteration = 0 ; iteration < d->setup.maxIteration ; ++iteration) {
+	int iteration;
+   	double earlyStopLossTemp = DBL_MAX;
+   	double earlyStopAccuracyTemp = DBL_MIN;
+   	double earlyStopPatienceTemp = d->setup.earlyStopPatience;
+    for (iteration = 0 ; iteration < d->setup.maxIteration ; ++iteration) {
     	unsigned int correctPredictions = 0;
     	double totalLoss = 0.0;
-    	double earlyStopLossTemp = 10000.0;
-    	double earlyStopAccuracyTemp = 0.0;
-    	double earlyStopPatienceTemp = d->setup.earlyStopPatience;
         for (int i = 0; i < d->training.counter; ++i) {
             // sigmoid
             double p = calcSigmoid(calcDotProduct(d->weight.w, d->training.x[i], d->setup.featureSize));
@@ -225,40 +230,38 @@ bool multiLogRegTrain(Data *d) {
             bool condition;
             switch(d->setup.earlyStopMethod) {
                 case LOSS_PATIENCE:
-                    condition = d->loss < earlyStopLossTemp;
+                    condition = doubleRound(d->loss,6) < earlyStopLossTemp;
                     break;
                 case ACCURACY_PATIENCE:
-                    condition = d->accuracy > earlyStopAccuracyTemp;
+                    condition = doubleRound(d->accuracy,6) > earlyStopAccuracyTemp;
                     break;
                 default:
                     break;
             }
             if (condition) {
-//                printf ("%.52lf\n",doubleRound(d->loss,6));
-//                switch(d->setup.earlyStopMethod) {
-//                case LOSS_PATIENCE:
-                    earlyStopLossTemp = d->loss;
-//                    break;
-//                case ACCURACY_PATIENCE:
-                    earlyStopLossTemp = d->accuracy;
-//                    break;
-//                default:
-//                    break;
- //               }
+                switch(d->setup.earlyStopMethod) {
+                case LOSS_PATIENCE:
+                    earlyStopLossTemp = doubleRound(d->loss,6);
+                    break;
+                case ACCURACY_PATIENCE:
+                    earlyStopAccuracyTemp = doubleRound(d->accuracy,6);
+                    break;
+                default:
+                    break;
+                }
                 earlyStopPatienceTemp = d->setup.earlyStopPatience;
             }
             else {
                 earlyStopPatienceTemp--;
-                printf ("%d\n",earlyStopAccuracyTemp);
             }
             if (earlyStopPatienceTemp == 0) {
-                printf ("%d\n", iteration);
                 break;
 
             }
         }
 
 	}
+	d->iteration = iteration;
     return true;
 }
 
@@ -319,25 +322,26 @@ int main() {
     double weights[FEATURES] =
 		{0.0,0.0,0.0};
 
+    // init
+    multiLogRegInit(&data, SAMPLES, FEATURES);
 
 	// setup
-    data.setup.sampleSize = SAMPLES;
-    data.setup.featureSize = FEATURES;
+	
+		// basic
+		data.setup.maxIteration = 100000;
+		data.setup.learningRate = 0.01;
 
-    data.setup.maxIteration = 10000;
-    data.setup.learningRate = 0.01;
+		// regularization
+	    data.setup.regularizationMethod = L1;
+    	data.setup.lambda = 0.05;
 
-    data.setup.regularizationMethod = L1;
-    data.setup.lambda = 0.05;
+		// losses
+    	data.setup.lossMethod = LOG_LOSS;
 
-    data.setup.lossMethod = LOG_LOSS;
-
-    data.setup.earlyStopMethod = LOSS_PATIENCE;
-    data.setup.earlyStopPatience = 2;
-    data.setup.earlyStopEpsilon = 0.0001;
-
-    // init
-    multiLogRegInit(&data);
+		// early-stop
+	    data.setup.earlyStopMethod = LOSS_PATIENCE;
+	    data.setup.earlyStopPatience = 10;
+	    data.setup.earlyStopEpsilon = 0.0001;
 
     // push (training) datas
     for (int i = 0; i < data.setup.sampleSize ; i++)
@@ -364,8 +368,9 @@ int main() {
     // show the result
     printf("The prediction is %d with the (%.1lf %.1lf %.1lf) input numbers.\n", data.result, input_data[0], input_data[1], input_data[2]);
 
-	printf ("Loss: %lf, Accuracy: %lf", data.loss, data.accuracy);
+	printf ("Loss: %lf, Accuracy: %lf\n", data.loss, data.accuracy);
 
+	printf ("Iteration: %d", data.iteration);
     return 0;
 }
 
