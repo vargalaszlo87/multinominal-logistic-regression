@@ -15,12 +15,14 @@ typedef struct Setup {
     unsigned int featureSize;
     double lambda;
     // dev
+    unsigned short regularizationMethod;
     enum regularization {
-        L1 = 1, // Lasso
-        L2 = 2  // Ridge
+        OFF = 0,
+        L1 = 1, // Lasso regression
+        L2 = 2  // Ridge regression
     };
     // -
-    unsigned short lossSetup;
+    unsigned short lossMethod;
     enum loss {
         LOG_LOSS,
         BINARY_CROSS_ENTROPY
@@ -110,7 +112,9 @@ bool multiLogRegInit(Data *d) {
         return false;
     d->training.counter = 0;
     d->weight.counter = 0;
-    d->setup.lossSetup = LOG_LOSS;
+    d->setup.lossMethod = LOG_LOSS;
+    d->setup.regularizationMethod = OFF;
+    d->setup.lambda = 0.05;
     return true;
 }
 
@@ -150,7 +154,7 @@ bool multiLogRegTrain(Data *d) {
             }
             // loss
             double loss;
-            switch (d->setup.lossSetup) {
+            switch (d->setup.lossMethod) {
                 case LOG_LOSS:
                    loss = -((d->training.y[i]) * log(p) + (1 - d->training.y[i]) * log(1 - p));
                    break;
@@ -165,7 +169,20 @@ bool multiLogRegTrain(Data *d) {
             // train
             for (int j = 0; j < d->setup.featureSize; ++j) {
                 // DEV: Ridge regularization
-                *(d->weight.w+j) += d->setup.learningRate * ((d->training.y[i] - p) * d->training.x[i][j] - d->setup.lambda * *(d->weight.w+j));
+                // regularization
+                // reg: - d->setup.lambda * *(d->weight.w+j)
+                switch (d->setup.regularizationMethod) {
+                    L1:
+                        *(d->weight.w+j) += d->setup.learningRate * ((d->training.y[i] - p) * d->training.x[i][j] - d->setup.lambda * );
+                        break;
+                    L2:
+                        *(d->weight.w+j) += d->setup.learningRate * ((d->training.y[i] - p) * d->training.x[i][j] - d->setup.lambda * pow(*(d->weight.w+j),2));
+                        break;
+                    default:
+                        *(d->weight.w+j) += d->setup.learningRate * ((d->training.y[i] - p) * d->training.x[i][j]);
+                        break;
+                }
+                //*(d->weight.w+j) += d->setup.learningRate * ((d->training.y[i] - p) * d->training.x[i][j] - d->setup.lambda * *(d->weight.w+j));
             }
         }
         d->accuracy = (double)correctPredictions / d->training.counter;
@@ -251,6 +268,7 @@ int main() {
 
     // reqularization
     data.setup.lambda = 0.05;
+    data.setup.regularizationMethod = L2;
 
     // train
     multiLogRegTrain(&data);
@@ -264,7 +282,7 @@ int main() {
     // show the result
     printf("The prediction is %d with the (%.1lf %.1lf %.1lf) input numbers.\n", data.result, input_data[0], input_data[1], input_data[2]);
 
-	multiLogRegMakeValidArray(&data, 0.48);
+	//multiLogRegMakeValidArray(&data, 0.48);
 
 	printf ("Loss: %lf, Accuracy: %lf", data.loss, data.accuracy);
 
@@ -282,6 +300,10 @@ Az accuracy értéke a helyesen osztályozott minták számának és az összes 
 
 Ez lesz a Ridge
 double lambda = 0.1; // Regularizációs paraméter (lambda)
+
+
+    *(d->weight.w+j) += d->setup.learningRate * ((d->training.y[i] - p) * d->training.x[i][j] - d->setup.lambda * *(d->weight.w+j));
+    *(d->weight.w+j) += d->setup.learningRate * ((d->training.y[i] - p) * d->training.x[i][j] - lambda * sign(*(d->weight.w+j)));
 
 // A súlyok frissítése Lasso regularizációval
 if (*(d->weight.w+j) > 0) {
