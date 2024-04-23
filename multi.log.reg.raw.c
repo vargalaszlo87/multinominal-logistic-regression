@@ -14,7 +14,7 @@
 
 typedef struct Setup {
 	enum none {
-		NONE = 0;
+		NONE = 0
 	};
     double learningRate;
     unsigned int maxIteration;
