@@ -15,15 +15,24 @@ typedef struct Setup {
     unsigned int maxIteration;
     unsigned int sampleSize;
     unsigned int featureSize;
+    // early stop
+    unsigned short earlyStopMethod;
+    enum early {
+        EARLY_NONE = 0,
+        LOSS = 1,
+        ACCURACY = 2
+    };
+    double earlyStopValue;
+    double earlyStopPatience;
+    // regularization
     double lambda;
-    // dev
     unsigned short regularizationMethod;
     enum regularization {
-        OFF = 0,
+        REGULARIZATION_NONE = 0,
         L1 = 1, // Lasso regression
         L2 = 2  // Ridge regression
     };
-    // -
+    // loss
     unsigned short lossMethod;
     enum loss {
         LOG_LOSS,
@@ -113,8 +122,11 @@ bool multiLogRegInit(Data *d) {
     d->training.counter = 0;
     d->weight.counter = 0;
     d->setup.lossMethod = LOG_LOSS;
-    d->setup.regularizationMethod = OFF;
+    d->setup.regularizationMethod = REGULARIZATION_NONE;
     d->setup.lambda = 0.05;
+    d->setup.earlyStopMethod = EARLY_NONE;
+    d->setup.earlyStopValue = 0.5;
+    d->setup.earlyStopPatience = 10;
     return true;
 }
 
@@ -246,7 +258,7 @@ int main() {
 		{0.0,0.0,0.0};
 
 	// setup
-    data.setup.maxIteration = 1000;
+    data.setup.maxIteration = 10;
     data.setup.learningRate = 0.01;
 
     data.setup.regularizationMethod = L1;
