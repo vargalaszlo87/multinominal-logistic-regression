@@ -8,6 +8,8 @@
 #define M_PI 3.1415926535897932384626463383279
 #endif
 
+// data structures
+
 typedef struct Setup {
     double learningRate;
     unsigned int maxIteration;
@@ -58,7 +60,7 @@ typedef struct Data  {
     int result;
 } Data, *pData;
 
-// stack
+// auxiliary functions
 
 void push(Stack* s, int item) {
 	if (s->pointer < s->size-1)
@@ -75,8 +77,6 @@ bool search(Stack* s, int item) {
 			return true;
 	return false;
 }
-
-// calc
 
 double calcDotProduct(double *n1, double *n2, unsigned int size) {
     double r = 0.0;
@@ -96,7 +96,7 @@ double calcBoXMuller() {
 	return sqrt(-2 * log(i)) * cos(2 * M_PI * j);
 }
 
-// interface
+// core functions
 
 bool multiLogRegInit(Data *d) {
     if (d->setup.sampleSize < 1 || d->setup.featureSize < 1)
@@ -168,21 +168,18 @@ bool multiLogRegTrain(Data *d) {
             totalLoss += loss;
             // train
             for (int j = 0; j < d->setup.featureSize; ++j) {
-                // DEV: Ridge regularization
-                // regularization
-                // reg: - d->setup.lambda * *(d->weight.w+j)
                 switch (d->setup.regularizationMethod) {
                     L1:
-                        *(d->weight.w+j) += d->setup.learningRate * ((d->training.y[i] - p) * d->training.x[i][j] - d->setup.lambda * );
+                        *(d->weight.w+j) += d->setup.learningRate * ((d->training.y[i] - p) * d->training.x[i][j] - d->setup.lambda * abs(*(d->weight.w+j)));
                         break;
                     L2:
                         *(d->weight.w+j) += d->setup.learningRate * ((d->training.y[i] - p) * d->training.x[i][j] - d->setup.lambda * pow(*(d->weight.w+j),2));
                         break;
+                    // OFF:
                     default:
                         *(d->weight.w+j) += d->setup.learningRate * ((d->training.y[i] - p) * d->training.x[i][j]);
                         break;
                 }
-                //*(d->weight.w+j) += d->setup.learningRate * ((d->training.y[i] - p) * d->training.x[i][j] - d->setup.lambda * *(d->weight.w+j));
             }
         }
         d->accuracy = (double)correctPredictions / d->training.counter;
@@ -221,6 +218,8 @@ bool multiLogRegMakeValidArray(Data * d, double ratio) {
 	}
 }
 
+// usage
+
 int main() {
 
 	// structure
@@ -250,6 +249,11 @@ int main() {
     data.setup.maxIteration = 1000;
     data.setup.learningRate = 0.01;
 
+    data.setup.regularizationMethod = L1;
+    data.setup.lambda = 0.05;
+
+    data.setup.lossMethod = BINARY_CROSS_ENTROPY;
+
     data.setup.sampleSize = SAMPLES;
     data.setup.featureSize = FEATURES;
 
@@ -260,15 +264,14 @@ int main() {
     for (int i = 0; i < data.setup.sampleSize ; i++)
         multiLogRegPushData(&data, X[i], Y[i]);
 
+    // weights
+    //
+    // add the weights manually
     //for (int i = 0; i < setup.featureSize ; i++)
     //    multiLogRPushWeight(&data, weights[i]);
-
-    // random weights
+    //
+    // add the weights automatic (from normal distribution)
     multiLogRegAutoWeight(&data);
-
-    // reqularization
-    data.setup.lambda = 0.05;
-    data.setup.regularizationMethod = L2;
 
     // train
     multiLogRegTrain(&data);
@@ -282,8 +285,6 @@ int main() {
     // show the result
     printf("The prediction is %d with the (%.1lf %.1lf %.1lf) input numbers.\n", data.result, input_data[0], input_data[1], input_data[2]);
 
-	//multiLogRegMakeValidArray(&data, 0.48);
-
 	printf ("Loss: %lf, Accuracy: %lf", data.loss, data.accuracy);
 
     return 0;
@@ -296,21 +297,5 @@ Minden minta előrejelzett osztályát meg kell határozni a tanítás után.
 Össze kell hasonlítani az előrejelzett osztályokat a valós osztályokkal.
 Kiszámítjuk a helyesen osztályozott minták számát.
 Az accuracy értéke a helyesen osztályozott minták számának és az összes minta számának hányadosa.
-
-
-Ez lesz a Ridge
-double lambda = 0.1; // Regularizációs paraméter (lambda)
-
-
-    *(d->weight.w+j) += d->setup.learningRate * ((d->training.y[i] - p) * d->training.x[i][j] - d->setup.lambda * *(d->weight.w+j));
-    *(d->weight.w+j) += d->setup.learningRate * ((d->training.y[i] - p) * d->training.x[i][j] - lambda * sign(*(d->weight.w+j)));
-
-// A súlyok frissítése Lasso regularizációval
-if (*(d->weight.w+j) > 0) {
-    *(d->weight.w+j) += d->setup.learningRate * ((d->training.y[i] - p) * d->training.x[i][j] - lambda);
-} else if (*(d->weight.w+j) < 0) {
-    *(d->weight.w+j) += d->setup.learningRate * ((d->training.y[i] - p) * d->training.x[i][j] + lambda);
-}
-
 
 */
