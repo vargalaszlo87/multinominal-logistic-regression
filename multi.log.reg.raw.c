@@ -21,13 +21,14 @@ typedef struct Setup {
     unsigned short earlyStopMethod;
     enum early {
         EARLY_NONE = 0,
-        LOSS_PATIENCE = 1,
-        LOSS_LIMIT = 2,
-        ACCURACY_PATIENCE = 3,
-        ACCURACY_LIMIT = 4
+        LOSS_LIMIT = 1,
+        ACCURACY_LIMIT = 2,
+        LOSS_PATIENCE = 3,
+        ACCURACY_PATIENCE = 4
     };
     double earlyStopValue;
     double earlyStopPatience;
+    double earlyStopEpsilon;
     // regularization
     double lambda;
     unsigned short regularizationMethod;
@@ -109,6 +110,15 @@ double calcBoXMuller() {
 	return sqrt(-2 * log(i)) * cos(2 * M_PI * j);
 }
 
+double doubleRound(double value, int d) {
+    double temp;
+    double shift = pow(10, d);
+    temp = value * shift;
+    temp = round(temp);
+    temp /= shift;
+    return temp;
+}
+
 // core functions
 
 bool multiLogRegInit(Data *d) {
@@ -125,12 +135,12 @@ bool multiLogRegInit(Data *d) {
         return false;
     d->training.counter = 0;
     d->weight.counter = 0;
-    d->setup.lossMethod = LOG_LOSS;
+    /*d->setup.lossMethod = LOG_LOSS;
     d->setup.regularizationMethod = REGULARIZATION_NONE;
     d->setup.lambda = 0.05;
     d->setup.earlyStopMethod = EARLY_NONE;
     d->setup.earlyStopValue = 0.5;
-    d->setup.earlyStopPatience = 10;
+    d->setup.earlyStopPatience = 10;*/
     return true;
 }
 
@@ -160,8 +170,8 @@ bool multiLogRegTrain(Data *d) {
     for (int iteration = 0 ; iteration < d->setup.maxIteration ; ++iteration) {
     	unsigned int correctPredictions = 0;
     	double totalLoss = 0.0;
-    	double earlyStopLossTemp = DBL_MAX;
-    	double earlyStopAccuracyTemp = DBL_MIN;
+    	double earlyStopLossTemp = 10000.0;
+    	double earlyStopAccuracyTemp = 0.0;
     	double earlyStopPatienceTemp = d->setup.earlyStopPatience;
         for (int i = 0; i < d->training.counter; ++i) {
             // sigmoid
@@ -203,6 +213,7 @@ bool multiLogRegTrain(Data *d) {
         }
         d->accuracy = (double)correctPredictions / d->training.counter;
         d->loss = totalLoss/d->training.counter;
+
         // early stop
         // limit
         if (d->setup.earlyStopMethod == LOSS_LIMIT && d->loss <= d->setup.earlyStopValue)
@@ -211,7 +222,7 @@ bool multiLogRegTrain(Data *d) {
             break;
         // patience
         if (d->setup.earlyStopMethod > 2) {
-            bool condition = false;
+            bool condition;
             switch(d->setup.earlyStopMethod) {
                 case LOSS_PATIENCE:
                     condition = d->loss < earlyStopLossTemp;
@@ -220,36 +231,33 @@ bool multiLogRegTrain(Data *d) {
                     condition = d->accuracy > earlyStopAccuracyTemp;
                     break;
                 default:
-                    condition = NULL;
                     break;
             }
             if (condition) {
-                switch(d->setup.earlyStopMethod) {
-                case LOSS_PATIENCE:
+//                printf ("%.52lf\n",doubleRound(d->loss,6));
+//                switch(d->setup.earlyStopMethod) {
+//                case LOSS_PATIENCE:
                     earlyStopLossTemp = d->loss;
-                    break;
-                case ACCURACY_PATIENCE:
+//                    break;
+//                case ACCURACY_PATIENCE:
                     earlyStopLossTemp = d->accuracy;
-                    break;
-                default:
-                    break;
-                }
+//                    break;
+//                default:
+//                    break;
+ //               }
                 earlyStopPatienceTemp = d->setup.earlyStopPatience;
             }
             else {
                 earlyStopPatienceTemp--;
+                printf ("%d\n",earlyStopAccuracyTemp);
             }
-            if (earlyStopPatienceTemp == 0)
+            if (earlyStopPatienceTemp == 0) {
+                printf ("%d\n", iteration);
                 break;
-        }
-/*
-        if () {
 
+            }
         }
-        else {
-            d->setup.earlyStopPatience--;
-        }
-*/
+
 	}
     return true;
 }
@@ -311,17 +319,22 @@ int main() {
     double weights[FEATURES] =
 		{0.0,0.0,0.0};
 
+
 	// setup
-    data.setup.maxIteration = 10;
+    data.setup.sampleSize = SAMPLES;
+    data.setup.featureSize = FEATURES;
+
+    data.setup.maxIteration = 10000;
     data.setup.learningRate = 0.01;
 
     data.setup.regularizationMethod = L1;
     data.setup.lambda = 0.05;
 
-    data.setup.lossMethod = BINARY_CROSS_ENTROPY;
+    data.setup.lossMethod = LOG_LOSS;
 
-    data.setup.sampleSize = SAMPLES;
-    data.setup.featureSize = FEATURES;
+    data.setup.earlyStopMethod = LOSS_PATIENCE;
+    data.setup.earlyStopPatience = 2;
+    data.setup.earlyStopEpsilon = 0.0001;
 
     // init
     multiLogRegInit(&data);
