@@ -13,6 +13,9 @@
 // data structures
 
 typedef struct Setup {
+	enum none {
+		NONE = 0;
+	};
     double learningRate;
     unsigned int maxIteration;
     unsigned int sampleSize;
@@ -20,7 +23,7 @@ typedef struct Setup {
     // early stop
     unsigned short earlyStopMethod;
     enum early {
-        EARLY_NONE = 0,
+    	// NONE
         LOSS_LIMIT = 1,
         ACCURACY_LIMIT = 2,
         LOSS_PATIENCE = 3,
@@ -33,7 +36,7 @@ typedef struct Setup {
     double lambda;
     unsigned short regularizationMethod;
     enum regularization {
-        REGULARIZATION_NONE = 0,
+		// NONE
         L1 = 1, // Lasso regression
         L2 = 2  // Ridge regression
     };
@@ -140,9 +143,9 @@ bool multiLogRegInit(Data *d, unsigned int samples, unsigned int features) {
     d->weight.counter = 0;
     // default
     d->setup.lossMethod = LOG_LOSS;
-    d->setup.regularizationMethod = REGULARIZATION_NONE;
+    d->setup.regularizationMethod = NONE;
     d->setup.lambda = 0.05;
-    d->setup.earlyStopMethod = EARLY_NONE;
+    d->setup.earlyStopMethod = NONE;
     d->setup.earlyStopValue = 0.5;
     d->setup.earlyStopPatience = 10;
     return true;
@@ -200,7 +203,7 @@ bool multiLogRegTrain(Data *d) {
                     break;
             }
             totalLoss += loss;
-            // train
+            // train + regularization
             for (int j = 0; j < d->setup.featureSize; ++j) {
                 switch (d->setup.regularizationMethod) {
                     L1:
@@ -209,7 +212,7 @@ bool multiLogRegTrain(Data *d) {
                     L2:
                         *(d->weight.w+j) += d->setup.learningRate * ((d->training.y[i] - p) * d->training.x[i][j] - d->setup.lambda * pow(*(d->weight.w+j),2));
                         break;
-                    // OFF:
+                    // NONE:
                     default:
                         *(d->weight.w+j) += d->setup.learningRate * ((d->training.y[i] - p) * d->training.x[i][j]);
                         break;
