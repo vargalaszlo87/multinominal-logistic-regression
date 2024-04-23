@@ -3,6 +3,8 @@
 #include <math.h>
 #include <stdbool.h>
 #include <time.h>
+#include <float.h>
+#include <limits.h>
 
 #ifndef M_PI
 #define M_PI 3.1415926535897932384626463383279
@@ -19,8 +21,10 @@ typedef struct Setup {
     unsigned short earlyStopMethod;
     enum early {
         EARLY_NONE = 0,
-        LOSS = 1,
-        ACCURACY = 2
+        LOSS_PATIENCE = 1,
+        LOSS_LIMIT = 2,
+        ACCURACY_PATIENCE = 3,
+        ACCURACY_LIMIT = 4
     };
     double earlyStopValue;
     double earlyStopPatience;
@@ -156,8 +160,11 @@ bool multiLogRegTrain(Data *d) {
     for (int iteration = 0 ; iteration < d->setup.maxIteration ; ++iteration) {
     	unsigned int correctPredictions = 0;
     	double totalLoss = 0.0;
+    	double earlyStopLossTemp = DBL_MAX;
+    	double earlyStopAccuracyTemp = DBL_MIN;
+    	double earlyStopPatienceTemp = d->setup.earlyStopPatience;
         for (int i = 0; i < d->training.counter; ++i) {
-
+            // sigmoid
             double p = calcSigmoid(calcDotProduct(d->weight.w, d->training.x[i], d->setup.featureSize));
             // accuracy
 			int pClass = (p >= 0.5) ? 1 : 0;
@@ -196,6 +203,53 @@ bool multiLogRegTrain(Data *d) {
         }
         d->accuracy = (double)correctPredictions / d->training.counter;
         d->loss = totalLoss/d->training.counter;
+        // early stop
+        // limit
+        if (d->setup.earlyStopMethod == LOSS_LIMIT && d->loss <= d->setup.earlyStopValue)
+            break;
+        if (d->setup.earlyStopMethod == ACCURACY_LIMIT && d->accuracy >= d->setup.earlyStopValue)
+            break;
+        // patience
+        if (d->setup.earlyStopMethod > 2) {
+            bool condition = false;
+            switch(d->setup.earlyStopMethod) {
+                case LOSS_PATIENCE:
+                    condition = d->loss < earlyStopLossTemp;
+                    break;
+                case ACCURACY_PATIENCE:
+                    condition = d->accuracy > earlyStopAccuracyTemp;
+                    break;
+                default:
+                    condition = NULL;
+                    break;
+            }
+            if (condition) {
+                switch(d->setup.earlyStopMethod) {
+                case LOSS_PATIENCE:
+                    earlyStopLossTemp = d->loss;
+                    break;
+                case ACCURACY_PATIENCE:
+                    earlyStopLossTemp = d->accuracy;
+                    break;
+                default:
+                    break;
+                }
+                earlyStopPatienceTemp = d->setup.earlyStopPatience;
+            }
+            else {
+                earlyStopPatienceTemp--;
+            }
+            if (earlyStopPatienceTemp == 0)
+                break;
+        }
+/*
+        if () {
+
+        }
+        else {
+            d->setup.earlyStopPatience--;
+        }
+*/
 	}
     return true;
 }
