@@ -336,7 +336,7 @@ int main() {
 
 		// regularization
 	    data.setup.regularizationMethod = L1;
-    	data.setup.lambda = 0.05;
+    	data.setup.lambda = 0.05; 
 
 		// losses
     	data.setup.lossMethod = LOG_LOSS;
