@@ -329,22 +329,21 @@ int main() {
     multiLogRegInit(&data, SAMPLES, FEATURES);
 
 	// setup
-	
 	// basic
 	data.setup.maxIteration = 100000;
 	data.setup.learningRate = 0.01;
 
 	// regularization
-    data.setup.regularizationMethod = L1;
+	data.setup.regularizationMethod = L1;
 	data.setup.lambda = 0.05; 
 
 	// losses
 	data.setup.lossMethod = LOG_LOSS;
 
 	// early-stop
-    data.setup.earlyStopMethod = LOSS_PATIENCE;
-    data.setup.earlyStopPatience = 10;
-    data.setup.earlyStopEpsilon = 0.0001;
+	data.setup.earlyStopMethod = LOSS_PATIENCE;
+	data.setup.earlyStopPatience = 10;
+	data.setup.earlyStopEpsilon = 0.0001;
 
     // push (training) datas
     for (int i = 0; i < data.setup.sampleSize ; i++)
