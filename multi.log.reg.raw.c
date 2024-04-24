@@ -181,6 +181,24 @@ bool multiLogRegTrain(Data *d) {
     for (iteration = 0 ; iteration < d->setup.maxIteration ; ++iteration) {
     	unsigned int correctPredictions = 0;
     	double totalLoss = 0.0;
+
+    	/* DEV --> összekeverés
+
+
+            // Shuffle training data at the beginning of each epoch (iteration)
+            for (int i = d->training.counter - 1; i > 0; --i) {
+                int j = rand() % (i + 1);
+                // Swap data
+                double *tempX = d->training.x[i];
+                d->training.x[i] = d->training.x[j];
+                d->training.x[j] = tempX;
+                int tempY = d->training.y[i];
+                d->training.y[i] = d->training.y[j];
+                d->training.y[j] = tempY;
+            }
+
+    	*/
+
         for (int i = 0; i < d->training.counter; ++i) {
             // sigmoid
             double p = calcSigmoid(calcDotProduct(d->weight.w, d->training.x[i], d->setup.featureSize));
