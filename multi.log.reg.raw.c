@@ -129,7 +129,7 @@ bool multiLogRegInit(Data *d, unsigned int samples, unsigned int features) {
     if (samples < 1 || features < 1)
         return false;
     d->setup.sampleSize = samples;
-	d->setup.featureSize = features;    
+	d->setup.featureSize = features;
     d->training.x = (double**)calloc(d->setup.sampleSize, sizeof(double*) + d->setup.featureSize * sizeof(double));
     if (!d -> training.x)
             return false;
@@ -205,16 +205,17 @@ bool multiLogRegTrain(Data *d) {
             totalLoss += loss;
             // train + regularization
             for (int j = 0; j < d->setup.featureSize; ++j) {
+                double gradient = (d->training.y[i] - p) * d->training.x[i][j];
                 switch (d->setup.regularizationMethod) {
                     L1:
-                        *(d->weight.w+j) += d->setup.learningRate * ((d->training.y[i] - p) * d->training.x[i][j] - d->setup.lambda * abs(*(d->weight.w+j)));
+                        *(d->weight.w+j) += d->setup.learningRate * (gradient - d->setup.lambda * abs(*(d->weight.w+j)));
                         break;
                     L2:
-                        *(d->weight.w+j) += d->setup.learningRate * ((d->training.y[i] - p) * d->training.x[i][j] - d->setup.lambda * pow(*(d->weight.w+j),2));
+                        *(d->weight.w+j) += d->setup.learningRate * (gradient - d->setup.lambda * pow(*(d->weight.w+j),2));
                         break;
                     // NONE:
                     default:
-                        *(d->weight.w+j) += d->setup.learningRate * ((d->training.y[i] - p) * d->training.x[i][j]);
+                        *(d->weight.w+j) += d->setup.learningRate * gradient;
                         break;
                 }
             }
@@ -335,7 +336,7 @@ int main() {
 
 	// regularization
 	data.setup.regularizationMethod = L1;
-	data.setup.lambda = 0.05; 
+	data.setup.lambda = 0.05;
 
 	// losses
 	data.setup.lossMethod = LOG_LOSS;
