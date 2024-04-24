@@ -403,4 +403,15 @@ Minden minta előrejelzett osztályát meg kell határozni a tanítás után.
 Kiszámítjuk a helyesen osztályozott minták számát.
 Az accuracy értéke a helyesen osztályozott minták számának és az összes minta számának hányadosa.
 
+
+gradient descent egy hatékony és gyakran használt algoritmus a paraméterek optimalizálására a gépi tanulásban és a neurális hálózatok tanításában, de vannak más alternatívák is, amelyeket érdemes lehet fontolóra venni. Néhány közülük:
+
+Stochastic Gradient Descent (SGD): Az SGD egy változata a gradient descentnek, amely csak egy véletlenszerűen kiválasztott adatpontot vesz figyelembe a gradient kiszámításakor, és ezáltal nagyobb sebességgel és kevesebb memóriaigénnyel rendelkezik. Ez különösen hasznos nagy adatkészletek esetén.
+Mini-batch Gradient Descent: A mini-batch gradient descent egy köztes megközelítés a teljes adatkészlet és a SGD között, ahol a gradiens számítását kisebb adatkészleteken (mini-batchek) végezzük. Ez lehetővé teszi a párhuzamosítást és a hatékonyabb számítást nagyobb adatkészletek esetén.
+Momentum-based Optimization: A momentum alapú optimalizációs algoritmusok (például a Momentum, Nesterov Accelerated Gradient) a gradiens súrlódásának csökkentése érdekében használnak egy momentum vagy sebességtermet. Ez lehetővé teszi az algoritmusnak, hogy gyorsabban haladjon a meredek lejtőkön, és elkerülje a lokális minimumokba való beesést.
+Adaptive Learning Rate Methods: Az adaptív tanulási ráta módszerek (például RMSprop, Adagrad, Adadelta, Adam) a tanulási ráta automatikus adaptálásával próbálják kiegyenlíteni a különböző irányokban és sebességekkel rendelkező lejtőket. Ez segíthet az optimalizációs folyamat simaságában és hatékonyságában.
+Conjugate Gradient Descent: A konjugált gradiens módszer olyan iteratív algoritmus, amely az előző gradiens irányát figyelembe véve keresi a következő legjobb lépést. Ez a módszer hatékony lehet, ha a célfüggvény kvadratikus vagy közel hozzá.
+Quasi-Newton Methods: A Quasi-Newton módszerek (például BFGS, L-BFGS) egyfajta másodrendű optimalizációs módszerek, amelyek megpróbálják becslésre venni a célfüggvény másodrendű deriváltját anélkül, hogy explicit módon kiszámítanák azt. Ez lehetővé teszi a gyorsabb konvergenciát és a nagyobb hatékonyságot bizonyos esetekben.
+Ezek csak néhány példa az alternatív optimalizációs módszerekre a gradient descent helyett. A választás a problémától és a rendelkezésre álló erőforrásoktól függ. Általában a tanulási ráta finomhangolásával és az algoritmus paramétereinek megfelelő beállításával lehet elérni a legjobb eredményeket a konkrét feladathoz.
+
 */
