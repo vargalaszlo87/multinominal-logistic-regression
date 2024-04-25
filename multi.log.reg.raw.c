@@ -20,6 +20,12 @@ typedef struct Setup {
     unsigned int maxIteration;
     unsigned int sampleSize;
     unsigned int featureSize;
+    // optimization 
+    unsigned short optimizationMethod;
+    enum optimization {
+    	GD = 0,		// Gradient Descent
+    	SGD = 1,	// Stochastic Gradient Descent
+	};
     // early stop
     unsigned short earlyStopMethod;
     enum early {
@@ -142,12 +148,14 @@ bool multiLogRegInit(Data *d, unsigned int samples, unsigned int features) {
     d->training.counter = 0;
     d->weight.counter = 0;
     // default
+    d->setup.optimizationMethod = GD;
     d->setup.lossMethod = LOG_LOSS;
     d->setup.regularizationMethod = NONE;
     d->setup.lambda = 0.05;
     d->setup.earlyStopMethod = NONE;
     d->setup.earlyStopValue = 0.5;
     d->setup.earlyStopPatience = 10;
+    d->iteration = 0;
     return true;
 }
 
@@ -182,10 +190,8 @@ bool multiLogRegTrain(Data *d) {
     	unsigned int correctPredictions = 0;
     	double totalLoss = 0.0;
 
-    	/* DEV --> összekeverés
-
-
-            // Shuffle training data at the beginning of each epoch (iteration)
+		// optimization
+		if (d->setup.optimizationMethod == SGD) {
             for (int i = d->training.counter - 1; i > 0; --i) {
                 int j = rand() % (i + 1);
                 // Swap data
@@ -195,9 +201,8 @@ bool multiLogRegTrain(Data *d) {
                 int tempY = d->training.y[i];
                 d->training.y[i] = d->training.y[j];
                 d->training.y[j] = tempY;
-            }
-
-    	*/
+            }			
+		}
 
         for (int i = 0; i < d->training.counter; ++i) {
             // sigmoid
@@ -292,31 +297,6 @@ int multiLogRegPredict(Data *d, double *inputData) {
     return (p >= 0.5) ? 1 : 0;
 }
 
-bool multiLogRegMakeValidArray(Data * d, double ratio) {
-
-	/*
-	** DEV
-	*/
-
-	int div = floor(d->setup.sampleSize * ratio);
-	if (ratio < 0.01 || ratio > 9.99 || div < 1)
-		return false;
-	// stack
-	d->validationIndex.array = (int*)calloc(div, sizeof(int));
-	d->validationIndex.pointer = -1;
-	d->validationIndex.size = div;
-	// core
-	srand(time(NULL));
-	for (int i = 0; i < div ;i++) {
-		int temp = rand() % (d->setup.sampleSize - 1 );
-		if (search(&d->validationIndex, temp)) {
-			i--;
-			continue;
-		}
-		push(&d->validationIndex, temp);
-	}
-}
-
 // usage
 
 int main() {
@@ -394,24 +374,3 @@ int main() {
 	printf ("Iteration: %d", data.iteration);
     return 0;
 }
-
-/*
-
-Accuracy:
-Minden minta előrejelzett osztályát meg kell határozni a tanítás után.
-Össze kell hasonlítani az előrejelzett osztályokat a valós osztályokkal.
-Kiszámítjuk a helyesen osztályozott minták számát.
-Az accuracy értéke a helyesen osztályozott minták számának és az összes minta számának hányadosa.
-
-
-gradient descent egy hatékony és gyakran használt algoritmus a paraméterek optimalizálására a gépi tanulásban és a neurális hálózatok tanításában, de vannak más alternatívák is, amelyeket érdemes lehet fontolóra venni. Néhány közülük:
-
-Stochastic Gradient Descent (SGD): Az SGD egy változata a gradient descentnek, amely csak egy véletlenszerűen kiválasztott adatpontot vesz figyelembe a gradient kiszámításakor, és ezáltal nagyobb sebességgel és kevesebb memóriaigénnyel rendelkezik. Ez különösen hasznos nagy adatkészletek esetén.
-Mini-batch Gradient Descent: A mini-batch gradient descent egy köztes megközelítés a teljes adatkészlet és a SGD között, ahol a gradiens számítását kisebb adatkészleteken (mini-batchek) végezzük. Ez lehetővé teszi a párhuzamosítást és a hatékonyabb számítást nagyobb adatkészletek esetén.
-Momentum-based Optimization: A momentum alapú optimalizációs algoritmusok (például a Momentum, Nesterov Accelerated Gradient) a gradiens súrlódásának csökkentése érdekében használnak egy momentum vagy sebességtermet. Ez lehetővé teszi az algoritmusnak, hogy gyorsabban haladjon a meredek lejtőkön, és elkerülje a lokális minimumokba való beesést.
-Adaptive Learning Rate Methods: Az adaptív tanulási ráta módszerek (például RMSprop, Adagrad, Adadelta, Adam) a tanulási ráta automatikus adaptálásával próbálják kiegyenlíteni a különböző irányokban és sebességekkel rendelkező lejtőket. Ez segíthet az optimalizációs folyamat simaságában és hatékonyságában.
-Conjugate Gradient Descent: A konjugált gradiens módszer olyan iteratív algoritmus, amely az előző gradiens irányát figyelembe véve keresi a következő legjobb lépést. Ez a módszer hatékony lehet, ha a célfüggvény kvadratikus vagy közel hozzá.
-Quasi-Newton Methods: A Quasi-Newton módszerek (például BFGS, L-BFGS) egyfajta másodrendű optimalizációs módszerek, amelyek megpróbálják becslésre venni a célfüggvény másodrendű deriváltját anélkül, hogy explicit módon kiszámítanák azt. Ez lehetővé teszi a gyorsabb konvergenciát és a nagyobb hatékonyságot bizonyos esetekben.
-Ezek csak néhány példa az alternatív optimalizációs módszerekre a gradient descent helyett. A választás a problémától és a rendelkezésre álló erőforrásoktól függ. Általában a tanulási ráta finomhangolásával és az algoritmus paramétereinek megfelelő beállításával lehet elérni a legjobb eredményeket a konkrét feladathoz.
-
-*/
