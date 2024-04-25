@@ -46,7 +46,7 @@ typedef struct Setup {
         LOSS_PATIENCE = 3,
         ACCURACY_PATIENCE = 4
     };
-    double earlyStopValue;
+    double earlyStopLimit;
     double earlyStopPatience;
     double earlyStopEpsilon;
     // regularization

@@ -72,12 +72,14 @@ bool multiLogRegInit(Data *d, unsigned int samples, unsigned int features) {
     d->training.counter = 0;
     d->weight.counter = 0;
     // default
+    d->setup.maxIteration = 10000;
+    d->setup.learningRate = 0.01;
     d->setup.optimizationMethod = GD;
     d->setup.lossMethod = LOG_LOSS;
     d->setup.regularizationMethod = NONE;
     d->setup.lambda = 0.05;
     d->setup.earlyStopMethod = NONE;
-    d->setup.earlyStopValue = 0.5;
+    d->setup.earlyStopLimit = 0.5;
     d->setup.earlyStopPatience = 10;
     d->iteration = 0;
     return true;
@@ -172,9 +174,9 @@ bool multiLogRegTrain(Data *d) {
 
         // early stop
         // limit
-        if (d->setup.earlyStopMethod == LOSS_LIMIT && d->loss <= d->setup.earlyStopValue)
+        if (d->setup.earlyStopMethod == LOSS_LIMIT && d->loss <= d->setup.earlyStopLimit)
             break;
-        if (d->setup.earlyStopMethod == ACCURACY_LIMIT && d->accuracy >= d->setup.earlyStopValue)
+        if (d->setup.earlyStopMethod == ACCURACY_LIMIT && d->accuracy >= d->setup.earlyStopLimit)
             break;
         // patience
         if (d->setup.earlyStopMethod > 2) {

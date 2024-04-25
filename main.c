@@ -41,8 +41,8 @@ int main()
 
 	// setup
 	// basic
-	data.setup.maxIteration = 100000;
-	data.setup.learningRate = 0.01;
+	data.setup.maxIteration = 11000;
+	data.setup.learningRate = 0.02;
 
 	// regularization
 	data.setup.regularizationMethod = L1;
