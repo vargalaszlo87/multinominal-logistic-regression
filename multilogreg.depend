@@ -1,0 +1,15 @@
+# depslib dependency file v1.0
+1714072742 source:c:\users\daemon\documents\github\multinominal-logistic-regression\main.c
+	<stdio.h>
+	<stdlib.h>
+	"include/multilogreg.h"
+
+1714073436 c:\users\daemon\documents\github\multinominal-logistic-regression\include\multilogreg.h
+	<stdio.h>
+	<stdlib.h>
+	<math.h>
+	<stdbool.h>
+	<time.h>
+	<float.h>
+	<limits.h>
+
